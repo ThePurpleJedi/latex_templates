@@ -1,0 +1,332 @@
+%% rivendell.sty
+%%
+%% A drop-in package that gives the standard `article' class the look of the
+%% AASTeX v7 "default" style (as used by ApJ/AJ/PASP): wide single-column
+%% text block, centred small-caps author block, centred upper-case section
+%% heads, italic subsection heads, "ABSTRACT" block with keywords, author-year
+%% citations, two-column REFERENCES list and lettered appendices.
+%%
+%% Usage:
+%%   \documentclass[10pt,a4paper]{article}
+%%   \usepackage[<options>]{rivendell}
+%%
+%% Options:
+%%   times        Times-like text and math fonts (newtx) instead of Computer Modern
+%%   numbers      numeric citations [1] instead of author-year (Author 2020)
+%%   nonatbib     do not load natbib or restyle the bibliography
+%%                (use this if you want biblatex instead)
+%%   nohyperref   do not load hyperref (cleveref is still loaded)
+%%   draft        diagonal DRAFT watermark, show \todo notes
+%%   trackchanges show \added / \deleted / \replaced markup
+%%
+%% Front-matter commands (all optional except \title and \author):
+%%   \title{...}            \shorttitle{...}    right side of the running head
+%%   \author[1,2]{Name}     \collaboration{...} line under the author list
+%%   \affil[1]{...}         \email{...}         foot of first page (repeatable)
+%%   \course{...}           \assignment{...}    running head: "<course> --- <assignment>"
+%%   \headertext{...}       replaces the running head text entirely
+%%   \date{...}             under the authors (default \today; \date{} hides it)
+%%
+%% Body commands and environments:
+%%   abstract environment, \keywords{...} (place right after the abstract),
+%%   acknowledgments environment, \tablenote[width]{...}, \appendix,
+%%   lstlisting environment / \lstinline (code, grey background),
+%%   \cref{...} / \Cref{...} (cleveref), booktabs rules,
+%%   \todo[opts]{...} (shown only with `draft'),
+%%   \added{new}, \deleted{old}, \replaced{new}{old} (markup only with `trackchanges';
+%%   otherwise they silently print the final text).
+%%
+%% Derived from the layout of aastex701.cls (AAS Journals). This package is an
+%% independent re-implementation and does not contain code from that class.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{rivendell}[2026/11/02 v1.0 AASTeX-style reports for the article class]
+
+%% ---------------------------------------------------------------- options
+\newif\ifrivendell@times
+\newif\ifrivendell@numbers
+\newif\ifrivendell@natbib     \rivendell@natbibtrue
+\newif\ifrivendell@hyperref   \rivendell@hyperreftrue
+\newif\ifrivendell@draft
+\newif\ifrivendell@trackchanges
+
+\DeclareOption{times}{\rivendell@timestrue}
+\DeclareOption{numbers}{\rivendell@numberstrue}
+\DeclareOption{nonatbib}{\rivendell@natbibfalse}
+\DeclareOption{nohyperref}{\rivendell@hyperreffalse}
+\DeclareOption{draft}{\rivendell@drafttrue}
+\DeclareOption{trackchanges}{\rivendell@trackchangestrue}
+\DeclareOption*{\PackageWarning{rivendell}{Unknown option `\CurrentOption'}}
+\ProcessOptions\relax
+
+%% ---------------------------------------------------------------- packages
+\RequirePackage{etoolbox}
+\RequirePackage[T1]{fontenc}
+\ifrivendell@times
+  \RequirePackage{newtxtext,newtxmath}
+\else
+  \RequirePackage{lmodern}
+\fi
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+\RequirePackage{array}
+\RequirePackage{booktabs}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{multicol}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{indentfirst}   % AAS indents the first paragraph after a heading
+\RequirePackage[noblocks]{authblk}
+\RequirePackage[font=small,labelfont=bf,labelsep=period,
+                justification=justified,singlelinecheck=true]{caption}
+
+%% ---------------------------------------------------------------- page layout
+%% AASTeX: 7.1in text width, ~64 lines of 12.5pt per page, 0.125in indent,
+%% no paragraph skip, page numbers in the header.
+\RequirePackage{geometry}
+\geometry{
+  textwidth=7.1in,
+  textheight=23cm,
+  hcentering,
+  top=2.2cm,
+  headheight=14pt,
+  headsep=0.3in,
+  footskip=0.4in,
+}
+\linespread{1.04}           % 10pt on 12.5pt, as in AASTeX
+\setlength\parindent{0.125in}
+\setlength\parskip{0pt}
+\tolerance=600
+\emergencystretch=1em
+
+%% ---------------------------------------------------------------- metadata
+\newcommand\rivendell@shorttitle{}
+\newcommand\rivendell@shortauthors{}
+\newcommand\rivendell@course{}
+\newcommand\rivendell@assignment{}
+\newcommand\rivendell@collaboration{}
+\newcommand\rivendell@emails{}
+\newcommand\shorttitle[1]{\renewcommand\rivendell@shorttitle{#1}}
+\newcommand\shortauthors[1]{\renewcommand\rivendell@shortauthors{#1}}% kept for AASTeX compatibility
+\newcommand\course[1]{\renewcommand\rivendell@course{#1}}
+\newcommand\assignment[1]{\renewcommand\rivendell@assignment{#1}}
+\newcommand\collaboration[1]{\renewcommand\rivendell@collaboration{#1}}
+\newcommand\email[1]{%
+  \ifdefempty\rivendell@emails
+    {\gappto\rivendell@emails{\href{mailto:#1}{#1}}}%
+    {\gappto\rivendell@emails{, \href{mailto:#1}{#1}}}}
+\providecommand\href[2]{#2}
+\date{\today}
+
+%% ---------------------------------------------------------------- headers
+%% ICLR-style running head on every page: text flush left, thin rule beneath;
+%% optional \shorttitle flush right. Page number centred in the footer.
+%% \headertext overrides the default "<course> --- <assignment>" head.
+\newcommand\rivendell@headertext{}
+\newcommand\headertext[1]{\renewcommand\rivendell@headertext{#1}}
+\newcommand\rivendell@head{%
+  \ifdefempty\rivendell@headertext
+    {\rivendell@course
+     \ifdefempty\rivendell@course{}{\ifdefempty\rivendell@assignment{}{: }}%
+     \rivendell@assignment}%
+    {\rivendell@headertext}}
+\fancypagestyle{rivendell@main}{%
+  \fancyhf{}%
+  \fancyhead[L]{\rivendell@head}%
+  \fancyhead[R]{\textsc{\rivendell@shorttitle}}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand\headrulewidth{0.4pt}%
+  \renewcommand\footrulewidth{0pt}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}%
+  \renewcommand\headrulewidth{0pt}}
+\pagestyle{rivendell@main}
+
+%% ---------------------------------------------------------------- title block
+\newcommand\rivendell@titlefont{\normalsize\bfseries}
+\renewcommand\Authfont{\small\scshape}
+\renewcommand\Affilfont{\footnotesize\itshape}
+\renewcommand\Authsep{, }
+\renewcommand\Authand{ and }
+\renewcommand\Authands{, and }
+\setlength\affilsep{1.2em}
+
+\renewcommand\maketitle{\par
+  \begingroup
+    \renewcommand\thefootnote{\fnsymbol{footnote}}%
+    \suppressfloats[t]%
+    \vspace*{.5em}%
+    {\centering\rivendell@titlefont\@title\par}%
+    \vskip 1.2em%
+    {\centering
+      \begin{tabular}[t]{c}\@author\end{tabular}\par}%
+    \ifdefempty\rivendell@collaboration{}{%
+      \vskip .4em{\centering\small\scshape\rivendell@collaboration\par}}%
+    \ifx\@date\@empty\else
+      \vskip .6em{\centering\small\@date\par}\fi
+    \ifdefempty\rivendell@emails{}{%
+      \begingroup
+        \renewcommand\thefootnote{}%
+        \footnotetext{\hspace*{-1.8em}Email: \rivendell@emails}%
+      \endgroup}%
+    \@thanks
+    \vskip 1.5em%
+  \endgroup
+  \setcounter{footnote}{0}%
+  \global\let\@thanks\@empty}
+
+%% ---------------------------------------------------------------- abstract
+\newlength\rivendell@absmargin
+\setlength\rivendell@absmargin{0.45in}
+\renewcommand\abstractname{Abstract}
+\renewenvironment{abstract}{%
+  \par\vskip .5em
+  {\centering\normalfont\MakeUppercase{\abstractname}\par}%
+  \vskip 1mm
+  \list{}{\leftmargin\rivendell@absmargin \rightmargin\rivendell@absmargin
+          \listparindent 9pt \itemindent\listparindent
+          \parsep\z@ \topsep\z@ \partopsep\z@}%
+  \item\relax}
+  {\endlist}
+
+\newcommand\keywords[1]{%
+  \par\vskip .8em
+  \begingroup
+    \leftskip\rivendell@absmargin \rightskip\rivendell@absmargin
+    \setbox\z@\hbox{\textit{Keywords:}~}%
+    \noindent\hangindent\wd\z@ \hangafter\@ne
+    \box\z@#1\par
+  \endgroup
+  \vskip 1em}
+
+%% ---------------------------------------------------------------- sections
+%% "1. INTRODUCTION" centred caps; "1.1. Italic" centred; smaller below that.
+\setcounter{secnumdepth}{3}
+\titleformat{\section}
+  {\normalfont\normalsize\filcenter}{\thesection.}{.5em}{\MakeUppercase}
+\titleformat{\subsection}
+  {\normalfont\normalsize\itshape\filcenter}{\thesubsection.}{.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\small\itshape\filcenter}{\thesubsubsection.}{.5em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\itshape}{}{0pt}{}[ ---]
+\titlespacing*{\section}      {0pt}{2.2ex plus .6ex minus .2ex}{1.1ex plus .2ex}
+\titlespacing*{\subsection}   {0pt}{1.8ex plus .5ex minus .2ex}{.9ex plus .2ex}
+\titlespacing*{\subsubsection}{0pt}{1.5ex plus .5ex minus .2ex}{.7ex plus .2ex}
+\titlespacing*{\paragraph}    {\parindent}{1ex plus .5ex minus .2ex}{.5em}
+
+\newenvironment{acknowledgments}
+  {\section*{Acknowledgments}\setlength\parindent{0pt}}
+  {\par}
+
+%% Appendix: an "APPENDIX" heading, sections lettered A, B, ..., equations (A1).
+\renewcommand\appendix{\par
+  \section*{Appendix}%
+  \setcounter{section}{0}\setcounter{subsection}{0}%
+  \renewcommand\thesection{\Alph{section}}%
+  \@ifpackageloaded{cleveref}{\crefalias{section}{appendix}}{}%
+  \counterwithin*{equation}{section}%
+  \renewcommand\theequation{\thesection\arabic{equation}}}
+
+%% ---------------------------------------------------------------- floats
+\captionsetup[table]{position=top,skip=4pt}
+\captionsetup[figure]{skip=6pt}
+\setlength\abovecaptionskip{6pt}
+%% Table notes in AAS style: "NOTE---..." in footnote size.
+\newcommand\tablenote[2][\linewidth]{%
+  \par\vskip 4pt
+  \parbox{#1}{\footnotesize\textsc{Note}---#2}\par}
+\setlength\footnotesep{9pt}
+
+%% ---------------------------------------------------------------- code listings
+\RequirePackage{listings}
+\definecolor{rivendell-codebg}{gray}{0.95}
+\definecolor{rivendell-codecomment}{gray}{0.45}
+\definecolor{rivendell-codekeyword}{cmyk}{1,1,0,0.2}
+\definecolor{rivendell-codestring}{rgb}{0.6,0.1,0.1}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{rivendell-codebg},
+  keywordstyle=\color{rivendell-codekeyword}\bfseries,
+  commentstyle=\color{rivendell-codecomment}\itshape,
+  stringstyle=\color{rivendell-codestring},
+  numbers=left, numberstyle=\tiny\color{rivendell-codecomment}, numbersep=6pt,
+  frame=none, framesep=0pt,
+  xleftmargin=1.5em, framexleftmargin=1.5em,
+  aboveskip=1ex, belowskip=1ex,
+  breaklines=true, breakatwhitespace=true,
+  showstringspaces=false, tabsize=4, columns=fullflexible, keepspaces=true,
+  upquote=true,
+}
+%% \lstinline uses normal-size type rather than the listings' footnotesize
+\lst@AddToHook{TextStyle}{\def\lst@basicstyle{\ttfamily}}
+
+%% ---------------------------------------------------------------- draft mode
+\ifrivendell@draft
+  \RequirePackage{draftwatermark}
+  \DraftwatermarkOptions{text=DRAFT,color=black!8,fontsize=4cm,angle=45}
+  \RequirePackage[colorinlistoftodos]{todonotes}
+  %% the margins are too narrow for margin notes, so notes are inline by default
+  \presetkeys{todonotes}{inline,color=orange!25,linecolor=orange,size=\footnotesize}{}
+\else
+  \RequirePackage[disable]{todonotes}
+\fi
+
+%% ---------------------------------------------------------------- track changes
+%% Same idea as AASTeX's `trackchanges': with the option the edits are marked,
+%% without it they collapse to the final text.
+\definecolor{rivendell-added}{cmyk}{1,1,0,0}
+\definecolor{rivendell-deleted}{rgb}{0.8,0,0}
+\ifrivendell@trackchanges
+  \newcommand\added[1]{{\color{rivendell-added}\bfseries #1}}
+  \newcommand\deleted[1]{{\color{rivendell-deleted}\sout{#1}}}
+  \newcommand\replaced[2]{\deleted{#2}\,\added{#1}}
+\else
+  \newcommand\added[1]{#1}
+  \newcommand\deleted[1]{}
+  \newcommand\replaced[2]{#1}
+\fi
+
+%% ---------------------------------------------------------------- bibliography
+\ifrivendell@natbib
+  \ifrivendell@numbers
+    \RequirePackage[numbers,square,sort&compress]{natbib}
+  \else
+    \RequirePackage[authoryear,round]{natbib}
+    \setcitestyle{aysep={},yysep={,}}
+  \fi
+  \setlength\bibsep{0pt}
+  \setlength\bibhang{1.5em}
+  \renewcommand\bibfont{\small\interlinepenalty\@M}% keep each entry in one column
+  \renewcommand\refname{References}
+  \let\rivendell@thebib\thebibliography
+  \let\rivendell@endthebib\endthebibliography
+  \renewenvironment{thebibliography}[1]
+    {\section*{\refname}%
+     \begin{multicols}{2}%
+     \let\bibsection\relax
+     \rivendell@thebib{#1}}
+    {\rivendell@endthebib\end{multicols}}
+\fi
+
+%% ---------------------------------------------------------------- hyperref
+%% Loaded last; AAS uses pure blue (cmyk 1,1,0,0) for every link.
+\ifrivendell@hyperref
+  \definecolor{rivendell-link}{cmyk}{1,1,0,0}
+  \RequirePackage[colorlinks=true,linkcolor=rivendell-link,citecolor=rivendell-link,
+                  filecolor=rivendell-link,urlcolor=rivendell-link,bookmarks=true]{hyperref}
+  \pdfstringdefDisableCommands{\let\thanks\@gobble}
+  \AtBeginDocument{%
+    \hypersetup{pdftitle={\@title}}}
+\fi
+
+%% cleveref must come after hyperref. AAS-style names: Figure 1, Table 2,
+%% Section 3, Equation (4); appendix sections print as "Appendix A".
+\RequirePackage[capitalise,noabbrev,nameinlink]{cleveref}
+\crefname{equation}{Equation}{Equations}
+\creflabelformat{equation}{#2(#1)#3}
+\crefname{appendix}{Appendix}{Appendices}
+\crefname{listing}{Listing}{Listings}
+\crefname{lstlisting}{Listing}{Listings}
+
+\endinput

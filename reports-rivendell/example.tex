@@ -1,0 +1,132 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage{rivendell}
+% Options: \usepackage[times]{rivendell}    Times fonts
+%          \usepackage[numbers]{rivendell}  numeric citations
+%          \usepackage[nonatbib]{rivendell} bring your own biblatex
+%          \usepackage[draft]{rivendell}    DRAFT watermark + visible \todo notes
+%          \usepackage[trackchanges]{rivendell}  show \added/\deleted/\replaced
+
+% \course{[CS7.401] Introduction to Something}
+\assignment{Assignment 1}
+\shorttitle{Example Report}   % optional, right side of the running head
+% \headertext{Just a Report or Whatever}  % or set the head freely
+
+\title{An Example Report Typeset with \texttt{rivendell}\thanks{Submitted on \today.}}
+
+\author[1]{First Author}
+\author[1,2]{Second Author}
+\affil[1]{International Institute of Information Technology, Hyderabad}
+\affil[2]{Some Other Lab, Somewhere}
+\email{first.author@example.com}
+\email{second.author@example.com}
+% \collaboration{(Team 7)}
+% \date{}   % hide the date
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document shows every feature of the \texttt{rivendell} package, which gives the
+standard \texttt{article} class the look of the AAS journals' default style. Drop
+\texttt{rivendell.sty} (and \texttt{rivendell.bst} if you cite from a \texttt{.bib} file)
+next to your \texttt{.tex} file and load it with \verb|\usepackage{rivendell}|.
+\end{abstract}
+
+\keywords{Templates; Typesetting; Assignments}
+
+\section{Introduction}\label{sec:intro}
+
+Section headings are centred and set in capitals; subsection headings are centred
+italics. Citations are author--year by default, for example \citet{lamport94} or
+\citep{knuth84}. Cross-references made with \verb|\cref| name themselves:
+\cref{sec:method}, \cref{fig:example}, \cref{tab:results}, \cref{eq:ridge},
+\cref{lst:ridge} and \cref{app:extra}.\footnote{Ordinary
+footnotes work as usual.}
+
+\subsection{Background}
+
+Let $\mathbf{X} \in \mathbb{R}^{n \times d}$ be a design matrix and
+$\mathbf{y} \in \mathbb{R}^{n}$ a target vector. For $\lambda > 0$ the ridge-regression
+estimate is
+\begin{equation}
+  \hat{\mathbf{w}} = (\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I})^{-1}
+  \mathbf{X}^\top \mathbf{y},
+  \label{eq:ridge}
+\end{equation}
+where $\mathbf{I}$ is the $d \times d$ identity matrix.
+
+\subsubsection{A third-level heading}
+
+Third-level headings are smaller still.
+
+\paragraph{Run-in heading} Paragraph headings run into the text.
+
+\section{Method}\label{sec:method}
+
+\clearpage
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.45\linewidth]{example-image}
+  \caption{Figure captions get a bold label and sit below the figure.}
+  \label{fig:example}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Table captions sit above the table. Rules come from \texttt{booktabs}.}
+  \label{tab:results}
+  \begin{tabular}{lcc}
+    \toprule
+    Method & Accuracy & Time (s) \\
+    \midrule
+    Baseline & 0.81 & 12.4 \\
+    Ours     & 0.87 & 10.9 \\
+    \bottomrule
+  \end{tabular}
+  \tablenote[0.5\linewidth]{Numbers are made up for illustration.}
+\end{table}
+
+Some text about the method, referring back to \cref{eq:ridge}. \Cref{lst:ridge}
+implements it with \lstinline|np.linalg.solve| rather than an explicit inverse.
+
+\begin{lstlisting}[language=Python, caption={Ridge regression in NumPy.}, label=lst:ridge]
+import numpy as np
+
+def ridge(X, y, lam):
+    """Closed-form ridge estimate."""
+    d = X.shape[1]
+    return np.linalg.solve(X.T @ X + lam * np.eye(d), X.T @ y)  # (d,)
+\end{lstlisting}
+
+With the \texttt{trackchanges} option, edits are marked: this sentence was
+\replaced{rewritten}{written badly}, \added{some words were added,} and some
+\deleted{unnecessary }words were removed. Without the option only the final text is
+printed. \todo{Notes like this one appear only with the \texttt{draft} option.}
+
+\begin{acknowledgments}
+We thank the teaching assistants.
+\end{acknowledgments}
+
+\appendix
+
+\section{Extra derivations}\label{app:extra}
+
+Appendix sections are lettered, and their equations are numbered accordingly:
+\begin{equation}
+  \lVert \mathbf{x} \rVert_2^2 = \sum_{i=1}^{d} x_i^2 .
+\end{equation}
+
+\bibliographystyle{rivendell}
+\begin{thebibliography}{2}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\bibitem[{Knuth(1984)}]{knuth84}
+Knuth, D. E. 1984, The \TeX book (Addison-Wesley)
+\bibitem[{Lamport(1994)}]{lamport94}
+Lamport, L. 1994, \LaTeX: A Document Preparation System, 2nd edn.\ (Addison-Wesley)
+\end{thebibliography}
+% With a .bib file, replace the thebibliography block above with:
+% \bibliography{references}
+
+\end{document}

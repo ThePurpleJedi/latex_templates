@@ -1,0 +1,181 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+% Add `handout' to the class options to collapse overlays into one page per frame.
+\usetheme{Gondolin}
+% Options: \usetheme[sans]{Gondolin}          Alegreya Sans body text
+%          \usetheme[accent=aqua]{Gondolin}   gruvbox accent (indigo, red, orange, yellow,
+%                                            green, aqua, blue, purple, gray)
+%          \usetheme[nodividers]{Gondolin}    no dark divider slide per section
+%          \usetheme[sectionpages]{Gondolin}  outline slide at each section
+%          \usetheme[noframeno]{Gondolin}     no frame numbers
+%          \usetheme[sharednumbering]{Gondolin}  Fact 1, Remark 2, ... (one counter)
+%          \usetheme[nonatbib]{Gondolin}      bring your own biblatex
+%
+% Speaker notes: uncomment one of these.
+% \setbeameroption{show notes on second screen=right}  % for pdfpc
+% \setbeameroption{show only notes}                    % printable script
+
+\title{An Example Talk with the Gondolin Theme}
+\subtitle{Montpellier's layout, cosmic latte and gruvbox, Arguelles' fonts}
+\author{First Author}
+\institute{International Institute of Information Technology, Hyderabad}
+\email{first.author@example.com}
+\event{Course Seminar}
+\date{\today}
+
+\begin{document}
+
+\titleframe
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+\begin{frame}{Lists and overlays}{a frame subtitle}
+  \begin{itemize}
+    \item<1-> The headline shows the section, the subsection and the talk title.
+    \item<2-> Overlays work as usual; a handout build collapses them.
+      \begin{itemize}
+        \item Second-level items are dimmer.
+      \end{itemize}
+    \item<3-> \alert{Alerted text} is gruvbox red.
+  \end{itemize}
+  \vspace{1em}
+  \begin{enumerate}
+    \item Citations are author--year: \citet{lamport94}, \citep{knuth84}.
+    \item Links take the accent colour: \url{https://ctan.org}.
+  \end{enumerate}
+  \note{Speaker notes go in \texttt{\textbackslash note}. They appear only when
+    notes are switched on in the preamble.}
+\end{frame}
+
+\subsection{Mathematics}
+
+\begin{frame}{Maths}
+  Let $\mathbf{X} \in \mathbb{R}^{n \times d}$ be a design matrix and
+  $\mathbf{y} \in \mathbb{R}^{n}$ a target vector. For $\lambda > 0$ the ridge
+  estimate is
+  \[
+    \hat{\mathbf{w}} = \operatorname*{arg\,min}_{\mathbf{w} \in \mathbb{R}^{d}}
+      \lVert \mathbf{y} - \mathbf{X}\mathbf{w} \rVert_2^2
+      + \lambda \lVert \mathbf{w} \rVert_2^2
+    = (\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I})^{-1} \mathbf{X}^\top \mathbf{y},
+  \]
+  where $\mathbf{I}$ is the $d \times d$ identity matrix.
+\end{frame}
+
+\begin{frame}{Theorems}
+  \begin{definition}
+    A matrix $\mathbf{A} \in \mathbb{R}^{d \times d}$ is \emph{positive definite} if
+    $\mathbf{v}^\top \mathbf{A} \mathbf{v} > 0$ for every nonzero
+    $\mathbf{v} \in \mathbb{R}^{d}$.
+  \end{definition}
+  \begin{theorem}
+    For every $\lambda > 0$ the matrix $\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}$
+    is positive definite, hence invertible.
+  \end{theorem}
+  \begin{remark}
+    Each kind of block is numbered on its own: this is Remark 1.
+  \end{remark}
+  \begin{proof}
+    For nonzero $\mathbf{v}$ we have
+    $\mathbf{v}^\top (\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}) \mathbf{v}
+     = \lVert \mathbf{X}\mathbf{v} \rVert_2^2 + \lambda \lVert \mathbf{v} \rVert_2^2
+     \ge \lambda \lVert \mathbf{v} \rVert_2^2 > 0$.
+  \end{proof}
+\end{frame}
+
+\section{Results}
+
+\begin{frame}{Blocks}
+  \begin{columns}[T]
+    \column{.32\textwidth}
+      \begin{block}{Block}
+        A plain block.
+      \end{block}
+    \column{.32\textwidth}
+      \begin{alertblock}{Alert block}
+        Something to watch out for.
+      \end{alertblock}
+    \column{.32\textwidth}
+      \begin{exampleblock}{Example block}
+        An example; its title takes the accent colour.
+      \end{exampleblock}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Code}
+  Code frames must be \texttt{[fragile]}. Inline code: \lstinline|np.linalg.solve|.
+\begin{lstlisting}[language=Python]
+import numpy as np
+
+def ridge(X, y, lam):
+    """Closed-form ridge estimate."""
+    d = X.shape[1]
+    return np.linalg.solve(X.T @ X + lam * np.eye(d), X.T @ y)  # shape (d,)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{A figure}
+  \begin{figure}
+    \centering
+    \includegraphics[height=.5\textheight]{example-image}
+    \caption{Captions are numbered.}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Image and text}
+  \imagetext[caption={The image goes on the right by default.}]{example-image}{%
+    \begin{itemize}
+      \item \texttt{\textbackslash imagetext\{file\}\{text\}} puts the text on the left.
+      \item Options: \texttt{left}, \texttt{width=.45}, \texttt{height=.75},
+            \texttt{caption=...}, \texttt{align=T}.
+    \end{itemize}}
+\end{frame}
+
+\begin{frame}{Image on the left}
+  \imagetext[left, width=.35]{example-image-b}{%
+    With \texttt{left} the image moves to the left; \texttt{width=.35} makes its
+    column narrower, and the text column takes the rest.}
+\end{frame}
+
+\begin{frame}[bg=example-image-a]{An image frame}
+  \texttt{[bg=file]} fills the slide with an image, cropped to fit.
+\end{frame}
+
+\begin{frame}[standout]
+  A \emph{standout} frame for the one sentence\\ people should remember.
+\end{frame}
+
+\section{Conclusion}
+
+\begin{frame}[fragile]{Summary}
+  \begin{itemize}
+    \item Drop \texttt{beamerthemeGondolin.sty} next to your slides.
+    \item Use \verb|\documentclass[aspectratio=169]{beamer}| and \verb|\usetheme{Gondolin}|.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[standout]
+  Thank you!\\[.5em]
+  {\normalsize Questions?}
+\end{frame}
+
+% Everything after \appendix is a backup slide: it gets a divider and does not
+% count towards the "n / N" total.
+\appendix
+
+\nocite{goodfellow16}
+\begin{frame}{References}
+  \bibliographystyle{rivendell}
+  \bibliography{refs}
+\end{frame}
+
+\begin{frame}{A backup slide}
+  Details you only show if someone asks.
+\end{frame}
+
+\end{document}

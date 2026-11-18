@@ -1,0 +1,529 @@
+%% beamerthemeGondolin.sty
+%%
+%% A minimal Montpellier-like layout (one-line headline: "Section > Subsection"
+%% on the left, short talk title on the right; no sidebars, no navigation
+%% symbols). Colours follow the warm gruvbox-light palette of my website
+%% (cosmic-latte canvas, parchment blocks, indigo links, gruvbox-dark for the
+%% dark slides); fonts follow Arguelles (Alegreya, Alegreya Sans; maths in the
+%% default Computer Modern).
+%%
+%% Usage (16:9 is a class option, so set it there):
+%%   \documentclass[aspectratio=169]{beamer}
+%%   \usetheme[<options>]{Gondolin}
+%%
+%% Options:
+%%   sans          Alegreya Sans for body text (default: Alegreya serif)
+%%   accent=<c>    accent for bullets, links, example blocks, code keywords
+%%                 and divider labels, from gruvbox: indigo (default, the
+%%                 site's link colour), red, orange, yellow, green, aqua, blue,
+%%                 purple, or gray for no accent
+%%   nodividers    no dark divider slide at each \section
+%%   sectionpages  an outline slide at the start of every section
+%%   noframeno     no frame number in the bottom-right corner
+%%   nonatbib      do not load natbib (bring your own biblatex)
+%%   sharednumbering  one counter for all theorem-like blocks, as in plain
+%%                 beamer (Fact 1, Remark 2, ...); default: one per type
+%%
+%% Extras:
+%%   \titleframe                               dark title slide
+%%   \begin{frame}[standout] ... \end{frame}   dark full-slide statement
+%%   \begin{frame}[bg=photo.jpg] ...           image filling the slide
+%%   \appendix                                 starts backup slides: a divider,
+%%                                             and they don't count in "n / N"
+%%   \imagetext[opts]{image}{text}            text left, image right; opts:
+%%                                             left, width=.45, height=.75,
+%%                                             caption=..., align=c|T
+%%   theorem, lemma, proposition, corollary, fact, definition, remark,
+%%   example, proof                            numbered blocks, one counter
+%%                                             per type (Fact 1, Remark 1)
+%%   lstlisting (needs [fragile] frames)       code on a parchment card
+%%   \note{...}                                speaker notes (see README)
+%%   \institute, \email{...}, \event{...}      shown on the title page
+%%
+%% Handouts: \documentclass[aspectratio=169,handout]{beamer} collapses overlays.
+%%
+%% Single-file theme: colour, font, inner and outer parts are all below.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemeGondolin}[2026/11/18 v1.1 Montpellier layout, gruvbox-latte colours, Arguelles fonts]
+
+%% ---------------------------------------------------------------- options
+\newif\ifgondolin@sans
+\newif\ifgondolin@frameno     \gondolin@framenotrue
+\newif\ifgondolin@sectionpages
+\newif\ifgondolin@dividers    \gondolin@dividerstrue
+\newif\ifgondolin@natbib      \gondolin@natbibtrue
+\newif\ifgondolin@backup
+\newif\ifgondolin@sharednumbering
+\def\gondolin@accent{indigo}
+\DeclareOptionBeamer{sans}{\gondolin@sanstrue}
+\DeclareOptionBeamer{noframeno}{\gondolin@framenofalse}
+\DeclareOptionBeamer{sectionpages}{\gondolin@sectionpagestrue}
+\DeclareOptionBeamer{nodividers}{\gondolin@dividersfalse}
+\DeclareOptionBeamer{nonatbib}{\gondolin@natbibfalse}
+\DeclareOptionBeamer{sharednumbering}{\gondolin@sharednumberingtrue}
+\DeclareOptionBeamer{accent}{\def\gondolin@accent{#1}}
+\ProcessOptionsBeamer
+
+\mode<presentation>
+
+\RequirePackage{etoolbox}
+\RequirePackage{tikz}
+\RequirePackage[svgnames,dvipsnames]{xcolor}
+\RequirePackage[skins]{tcolorbox}
+\RequirePackage{multicol}
+\RequirePackage{listings}
+\RequirePackage[T1]{fontenc}
+
+%% ---------------------------------------------------------------- fonts
+%% Alegreya (serif) body, Alegreya Sans for navigation and titles, as in
+%% Arguelles. Maths is left in LaTeX's default Computer Modern, with
+%% Palatino-style blackboard bold.
+\RequirePackage[osf]{Alegreya}
+\RequirePackage[osf]{AlegreyaSans}
+\RequirePackage[bb=px]{mathalpha}
+\RequirePackage[varqu,scaled=0.95]{zi4}   % Inconsolata for \ttfamily and code
+\RequirePackage[nopatch=footnote]{microtype}
+
+\ifgondolin@sans
+  \usefonttheme[onlymath]{serif}
+  \renewcommand*\familydefault{\sfdefault}
+  \newcommand\gondolin@medium{\AlegreyaSansMedium}
+\else
+  \usefonttheme{serif}
+  \newcommand\gondolin@medium{\AlegreyaMedium}
+\fi
+
+\setbeamerfont{title}{family=\AlegreyaSansBlack,size=\LARGE}
+\setbeamerfont{subtitle}{family=\AlegreyaSansMedium,size=\Large}
+\setbeamerfont{author}{series=\bfseries,size=\large}
+\setbeamerfont{institute}{size=\small}
+\setbeamerfont{date}{shape=\itshape,size=\small}
+\setbeamerfont{event}{shape=\itshape,size=\small}
+\setbeamerfont{email}{size=\small}
+
+\setbeamerfont{title in head/foot}{family=\AlegreyaSans\scshape,size=\scriptsize}
+\setbeamerfont{section in head/foot}{family=\AlegreyaSans\scshape,size=\scriptsize}
+\setbeamerfont{subsection in head/foot}{family=\AlegreyaSans,size=\scriptsize}
+\setbeamerfont{footline}{family=\AlegreyaSans,size=\scriptsize}
+
+\setbeamerfont{frametitle}{family=\gondolin@medium,size=\Large}
+\setbeamerfont{framesubtitle}{family=\gondolin@medium,size=\normalsize}
+\setbeamerfont{block title}{family=\gondolin@medium,shape=\itshape,size=\normalsize}
+\setbeamerfont{section in toc}{size=\large}
+\setbeamerfont{caption name}{family=\AlegreyaSans\scshape}
+\setbeamerfont{divider label}{family=\AlegreyaSans\scshape,size=\normalsize}
+\setbeamerfont{divider title}{family=\AlegreyaSansBlack,size=\huge}
+\setbeamerfont{note page}{size=\normalsize}
+
+%% ---------------------------------------------------------------- colours
+%% The light palette of my site (gruvbox-light, warmed) on a cosmic-latte
+%% canvas; dark slides use the site's gruvbox-dark palette.
+\definecolor{gondolin-latte}{HTML}{FFF8E7}      % canvas (cosmic latte)
+\definecolor{gondolin-card}{HTML}{F3E7C4}       % block bodies, code
+\definecolor{gondolin-parchment}{HTML}{E6D5B8}  % block titles
+\definecolor{gondolin-inner}{HTML}{D8C7A1}      % rules
+\definecolor{gondolin-muted}{HTML}{7C6F64}      % head/foot, captions, comments
+\definecolor{gondolin-offfg}{HTML}{504945}      % secondary text
+\definecolor{gondolin-fg}{HTML}{282828}         % body text
+\definecolor{gondolin-strong}{HTML}{1D2021}     % titles, structure
+\definecolor{gondolin-red}{HTML}{9D0006}        % alerts
+\definecolor{gondolin-green}{HTML}{79740E}      % code strings
+\definecolor{gondolin-night}{HTML}{201D1D}      % dark slides
+\definecolor{gondolin-night-soft}{HTML}{BDAE93} % secondary text on dark
+\definecolor{gondolin-night-dim}{HTML}{928374}  % tertiary text on dark
+
+%% Accents: {light}{on dark}, gruvbox-light / gruvbox-dark pairs.
+\newcommand\gondolin@defaccent[3]{%
+  \@namedef{gondolin@acc@#1}{%
+    \definecolor{gondolin-accent}{HTML}{#2}%
+    \definecolor{gondolin-accent-light}{HTML}{#3}}}
+\gondolin@defaccent{indigo}{231154}{83A598}
+\gondolin@defaccent{red}{9D0006}{FB4934}
+\gondolin@defaccent{orange}{AF3A03}{FE8019}
+\gondolin@defaccent{yellow}{B57614}{FABD2F}
+\gondolin@defaccent{green}{79740E}{B8BB26}
+\gondolin@defaccent{aqua}{427B58}{8EC07C}
+\gondolin@defaccent{blue}{076678}{83A598}
+\gondolin@defaccent{purple}{8F3F71}{D3869B}
+\gondolin@defaccent{gray}{504945}{BDAE93}
+\ifcsname gondolin@acc@\gondolin@accent\endcsname
+  \csname gondolin@acc@\gondolin@accent\endcsname
+\else
+  \PackageWarning{beamerthemeGondolin}{Unknown accent `\gondolin@accent'; using indigo}%
+  \csname gondolin@acc@indigo\endcsname
+\fi
+
+\setbeamercolor*{structure}{fg=gondolin-strong,bg=gondolin-latte}
+\setbeamercolor*{normal text}{fg=gondolin-fg,bg=gondolin-latte}
+\setbeamercolor*{background canvas}{bg=gondolin-latte}
+\setbeamercolor*{alerted text}{fg=gondolin-red}
+\setbeamercolor*{example text}{fg=gondolin-offfg}
+\setbeamercolor*{inverted text}{fg=gondolin-latte,bg=gondolin-night}
+
+\setbeamercolor*{title in head/foot}{fg=gondolin-muted}
+\setbeamercolor*{section in head/foot}{fg=gondolin-strong}
+\setbeamercolor*{subsection in head/foot}{fg=gondolin-muted}
+\setbeamercolor*{separation line head}{fg=gondolin-inner}
+\setbeamercolor*{footline}{fg=gondolin-muted}
+
+\setbeamercolor*{frametitle}{fg=gondolin-strong}
+\setbeamercolor*{framesubtitle}{fg=gondolin-muted}
+
+\setbeamercolor*{block title}{fg=gondolin-strong,bg=gondolin-parchment}
+\setbeamercolor*{block body}{fg=gondolin-fg,bg=gondolin-card}
+\setbeamercolor*{block title alerted}{fg=gondolin-red,bg=gondolin-red!12!gondolin-latte}
+\setbeamercolor*{block body alerted}{fg=gondolin-fg,bg=gondolin-card}
+\setbeamercolor*{block title example}{fg=gondolin-latte,bg=gondolin-accent}
+\setbeamercolor*{block body example}{fg=gondolin-fg,bg=gondolin-card}
+
+\setbeamercolor*{item}{fg=gondolin-accent}
+\setbeamercolor*{subitem}{fg=gondolin-muted}
+\setbeamercolor*{section in toc}{fg=gondolin-strong}
+\setbeamercolor*{section in toc shaded}{fg=gondolin-muted!60!gondolin-latte}
+\setbeamercolor*{subsection in toc}{fg=gondolin-offfg}
+\setbeamercolor*{caption name}{fg=gondolin-strong}
+
+%% Internal links (toc, headline) keep the surrounding colour; URLs and
+%% citations take the accent.
+\hypersetup{colorlinks=true,linkcolor=.,urlcolor=gondolin-accent,
+            citecolor=gondolin-accent,filecolor=gondolin-accent}
+\setbeamercolor{note page}{fg=gondolin-fg,bg=gondolin-latte}
+\pdfstringdefDisableCommands{\let\translate\@firstofone}% beamer's \appendix bookmark
+
+%% ---------------------------------------------------------------- outer: headline
+%% One line: "SECTION > Subsection" flush left, short title flush right,
+%% then a thin light rule. Empty parts (no section yet, no subsection) are
+%% skipped, so the line never shows a dangling separator.
+\newcommand\gondolin@crumbsep{\hspace{.45em}{\color{gondolin-muted}$\rangle$}\hspace{.45em}}
+\defbeamertemplate*{headline}{Gondolin}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=3.8ex,dp=1.3ex,
+      leftskip=.4cm,rightskip=.4cm]{section in head/foot}%
+    \setbox\beamer@tempbox=\hbox{\insertsectionhead}%
+    \ifdim\wd\beamer@tempbox>1pt
+      {\usebeamerfont{section in head/foot}\usebeamercolor[fg]{section in head/foot}%
+       \insertsectionhead}%
+      \setbox\beamer@tempbox=\hbox{\insertsubsectionhead}%
+      \ifdim\wd\beamer@tempbox>1pt
+        \gondolin@crumbsep
+        {\usebeamerfont{subsection in head/foot}\usebeamercolor[fg]{subsection in head/foot}%
+         \insertsubsectionhead}%
+      \fi
+    \fi
+    \hfill
+    {\usebeamerfont{title in head/foot}\usebeamercolor[fg]{title in head/foot}%
+     \insertshorttitle}%
+  \end{beamercolorbox}%
+  \nointerlineskip
+  {\usebeamercolor[fg]{separation line head}%
+   \hbox to\paperwidth{\hskip.4cm\leaders\hrule height.4pt\hfill\hskip.4cm}}}
+
+%% ---------------------------------------------------------------- outer: footline
+%% "n / N", where N counts only the main talk (read from the .aux file, so
+%% it is right from the second run). Backup slides show "Backup k".
+\providecommand\gondolin@maintotal{\inserttotalframenumber}
+\def\gondolin@mainlast{0}
+\defbeamertemplate*{footline}{Gondolin}{%
+  \ifgondolin@frameno
+    \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+    \hfill
+    \ifgondolin@backup
+      Backup~\number\numexpr\c@framenumber-\gondolin@mainlast\relax
+    \else
+      \insertframenumber\,/\,\gondolin@maintotal
+    \fi
+    \hspace*{.4cm}%
+    \vskip.3cm%
+  \fi}
+\setbeamertemplate{navigation symbols}{}
+
+%% ---------------------------------------------------------------- outer: frame title
+\defbeamertemplate*{frametitle}{Gondolin}{%
+  \vskip.25ex
+  \begin{beamercolorbox}[wd=\textwidth,leftskip=0pt]{frametitle}%
+    \usebeamerfont{frametitle}\insertframetitle
+    \ifx\insertframesubtitle\@empty\else
+      \hfill{\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}%
+             \insertframesubtitle}%
+    \fi
+  \end{beamercolorbox}%
+  \vskip-.6ex}
+
+%% ---------------------------------------------------------------- inner
+\def\insertevent{}
+\newcommand\event[1]{\def\insertevent{#1}}
+\def\insertemail{}
+\newcommand\email[1]{\def\insertemail{\href{mailto:#1}{#1}}}
+
+%% Title page: Arguelles' dark slide, text flush left at the bottom.
+\defbeamertemplate*{title page}{Gondolin}{%
+  \vfill
+  \begin{minipage}{\textwidth}%
+    \usebeamercolor[fg]{normal text}\raggedright
+    \hypersetup{urlcolor=gondolin-night-soft}%
+    {\usebeamerfont{title}\inserttitle\par}%
+    \ifx\insertsubtitle\@empty\else
+      \vskip.4ex{\usebeamerfont{subtitle}\color{gondolin-night-soft}\insertsubtitle\par}\fi
+    \vskip1.6em
+    {\usebeamerfont{author}\insertauthor\par}%
+    \vskip.4ex
+    {\usebeamerfont{institute}\color{gondolin-night-soft}\insertinstitute\par}%
+    \ifx\insertemail\@empty\else
+      {\usebeamerfont{email}\color{gondolin-night-soft}\insertemail\par}\fi
+    \vskip1.2em
+    {\usebeamerfont{event}\color{gondolin-night-dim}%
+     \ifx\insertevent\@empty\else\insertevent\par\fi
+     {\usebeamerfont{date}\insertdate\par}}%
+  \end{minipage}%
+  \vskip1.2cm}
+
+\newcommand\gondolin@darkframe{%
+  \setbeamercolor{background canvas}{bg=gondolin-night}%
+  \setbeamercolor{normal text}{fg=gondolin-latte,bg=gondolin-night}%
+  \setbeamercolor{footline}{fg=gondolin-night-dim}%
+  \setbeamercolor{alerted text}{fg=gondolin-accent-light}%
+  \setbeamertemplate{headline}{}%
+  \usebeamercolor[fg]{normal text}}
+
+%% \titleframe: the dark title slide (no headline, not counted).
+%% A plain \begin{frame}\titlepage\end{frame} also works, on the light canvas.
+\newcommand\titleframe{%
+  \begingroup
+    \gondolin@darkframe
+    \setbeamertemplate{footline}{}%
+    \begin{frame}[noframenumbering]\titlepage\end{frame}%
+  \endgroup}
+
+%% Lists: plain typographic bullets in the structure colour
+\setbeamertemplate{itemize item}{\raise.15ex\hbox{\scriptsize$\bullet$}}
+\setbeamertemplate{itemize subitem}{\raise.2ex\hbox{\tiny$\circ$}}
+\setbeamertemplate{itemize subsubitem}{\raise.2ex\hbox{\tiny$\cdot$}}
+\setbeamertemplate{enumerate item}{\insertenumlabel.}
+\setbeamertemplate{enumerate subitem}{\insertenumlabel.\insertsubenumlabel.}
+\setbeamertemplate{enumerate subsubitem}{\insertenumlabel.\insertsubenumlabel.\insertsubsubenumlabel.}
+\setlength\leftmargini{1.2em}
+\setlength\leftmarginii{1.2em}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{section in toc}{\inserttocsection}
+\setbeamertemplate{subsection in toc}{%
+  \leavevmode\hskip1.2em{\small\inserttocsubsection}\par}
+\setbeamertemplate{section in toc shaded}[default][100]
+
+%% Bibliography: no beamer icons
+\setbeamertemplate{bibliography item}{}
+
+%% ---------------------------------------------------------------- standout frames
+%% \begin{frame}[standout] ... : dark, centred, large text, no headline.
+\newbool{gondolin@standout}
+\define@key{beamerframe}{standout}[true]{%
+  \booltrue{gondolin@standout}%
+  \begingroup
+  \gondolin@darkframe
+  \setbeamertemplate{frametitle}{}%
+  \beamer@frametopskip=0pt plus 1fill\relax
+  \beamer@framebottomskip=0pt plus 1fill\relax
+  \centering\Large}
+\pretocmd\beamer@reseteecodes{%
+  \ifbool{gondolin@standout}{\endgroup\boolfalse{gondolin@standout}}{}}{}{}
+
+%% ---------------------------------------------------------------- image frames
+%% \begin{frame}[bg=photo.jpg]: the image fills the slide (cropped, not
+%% stretched); headline and frame number stay on top.
+\BeforeBeginEnvironment{frame}{\setbeamertemplate{background}{}}
+\define@key{beamerframe}{bg}{%
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}
+      \useasboundingbox (0,0) rectangle (\paperwidth,\paperheight);
+      \path[fill overzoom image={#1}] (0,0) rectangle (\paperwidth,\paperheight);
+    \end{tikzpicture}}}
+
+%% ---------------------------------------------------------------- dividers
+%% \gondolin@divider{small label}{big title}: a dark, unnumbered slide.
+\newcommand\gondolin@divider[2]{%
+  \begingroup
+    \gondolin@darkframe
+    \setbeamertemplate{footline}{}%
+    \begin{frame}[noframenumbering]
+      \vfill
+      {\usebeamerfont{divider label}\color{gondolin-accent-light}#1\par}%
+      \vskip.5ex
+      {\usebeamerfont{divider title}\raggedright #2\par}%
+      \vskip1.2cm
+    \end{frame}%
+  \endgroup}
+
+\AtBeginSection[]{%
+  \ifgondolin@backup\else
+    \ifgondolin@dividers
+      \gondolin@divider{Section \insertsectionnumber}{\insertsectionhead}%
+    \fi
+    \ifgondolin@sectionpages
+      \begin{frame}[noframenumbering]
+        \frametitle{Outline}
+        \tableofcontents[currentsection,hideallsubsections]
+      \end{frame}%
+    \fi
+  \fi}
+
+%% ---------------------------------------------------------------- backup slides
+%% \appendix: record the main-talk total in the .aux, switch the footline to
+%% "Backup k" and show a divider.
+\apptocmd\appendix{%
+  \global\gondolin@backuptrue
+  \xdef\gondolin@mainlast{\the\c@framenumber}%
+  \immediate\write\@auxout{\gdef\string\gondolin@maintotal{\the\c@framenumber}}%
+  \gondolin@divider{Appendix}{Backup slides}}{}{}
+
+%% ---------------------------------------------------------------- image + text
+%% \imagetext[options]{image file}{text}: two columns inside a frame, text on
+%% the left and the image on the right (option `left' swaps them).
+%%   width=<fraction>   image column as a fraction of \textwidth (default .45)
+%%   height=<fraction>  maximum image height as a fraction of \textheight
+%%                      (default .75); the image keeps its aspect ratio
+%%   caption=<text>     numbered caption under the image
+%%   align=c|T          vertical alignment of the two columns (default c)
+%% The text argument can hold lists and maths, but not verbatim material.
+\pgfkeys{
+  /gondolin/imagetext/.is family, /gondolin/imagetext,
+  left/.code    = \def\gondolin@img@left{1},
+  right/.code   = \def\gondolin@img@left{0},
+  width/.store in   = \gondolin@img@width,
+  height/.store in  = \gondolin@img@height,
+  caption/.store in = \gondolin@img@caption,
+  align/.store in   = \gondolin@img@align,
+}
+\newcommand\imagetext[3][]{%
+  \begingroup
+    \pgfkeys{/gondolin/imagetext,
+      right, width=.45, height=.75, caption={}, align=c, #1}%
+    \pgfmathsetlengthmacro\gondolin@img@w{\gondolin@img@width*\textwidth}%
+    \pgfmathsetlengthmacro\gondolin@img@t{(0.96-\gondolin@img@width)*\textwidth}%
+    \pgfmathsetlengthmacro\gondolin@img@h{\gondolin@img@height*\textheight}%
+    \def\gondolin@img@image{%
+      \column{\gondolin@img@w}%
+        \ifx\gondolin@img@caption\@empty
+          \centering
+          \includegraphics[width=\linewidth,height=\gondolin@img@h,keepaspectratio]{#2}%
+        \else
+          \begin{figure}
+            \centering
+            \includegraphics[width=\linewidth,height=\gondolin@img@h,keepaspectratio]{#2}%
+            \caption{\gondolin@img@caption}%
+          \end{figure}%
+        \fi}%
+    \def\gondolin@img@text{\column{\gondolin@img@t}#3}%
+    \begin{columns}[\gondolin@img@align,onlytextwidth]
+      \ifnum\gondolin@img@left=1
+        \gondolin@img@image\gondolin@img@text
+      \else
+        \gondolin@img@text\gondolin@img@image
+      \fi
+    \end{columns}%
+  \endgroup}
+
+%% ---------------------------------------------------------------- theorems
+%% beamer's theorem, lemma, corollary, fact, definition, example and proof
+%% are blocks; number them and keep the block colours above.
+%%
+%% beamer declares them all on the `theorem' counter, so a deck reads
+%% "Fact 1, Lemma 2, Definition 3". By default each type gets its own counter
+%% here ("Fact 1, Lemma 1, Definition 1"); `sharednumbering' keeps beamer's.
+%% proposition and remark, which beamer lacks, are added at \begin{document}
+%% unless the deck defines them itself.
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{block body}{}
+
+%% \gondolin@owncounter{env}: print env's own counter (beamer's declaration
+%% left \the<env> pointing at \thetheorem) and keep it steady across overlays.
+\newcommand\gondolin@owncounter[1]{%
+  \expandafter\gdef\csname the#1\endcsname{\arabic{#1}}%
+  \resetcounteronoverlays{#1}}
+%% \gondolin@retheorem{env}{style}{name}: re-declare env on its own counter
+\newcommand\gondolin@retheorem[3]{%
+  \expandafter\let\csname #1\endcsname\relax
+  \expandafter\let\csname end#1\endcsname\relax
+  \expandafter\let\csname the#1\endcsname\relax
+  \theoremstyle{#2}\newtheorem{#1}{#3}%
+  \gondolin@owncounter{#1}}
+\ifgondolin@sharednumbering\else
+  \gondolin@retheorem{corollary}{plain}{\translate{Corollary}}
+  \gondolin@retheorem{fact}{plain}{\translate{Fact}}
+  \gondolin@retheorem{lemma}{plain}{\translate{Lemma}}
+  \gondolin@retheorem{problem}{plain}{\translate{Problem}}
+  \gondolin@retheorem{solution}{plain}{\translate{Solution}}
+  \gondolin@retheorem{definition}{definition}{\translate{Definition}}
+  \gondolin@retheorem{definitions}{definition}{\translate{Definitions}}
+  \gondolin@retheorem{example}{example}{\translate{Example}}
+  \gondolin@retheorem{examples}{example}{\translate{Examples}}
+  \theoremstyle{plain}
+\fi
+
+\AtBeginDocument{%
+  \@ifundefined{proposition}{%
+    \theoremstyle{plain}%
+    \ifgondolin@sharednumbering
+      \newtheorem{proposition}[theorem]{Proposition}%
+    \else
+      \newtheorem{proposition}{Proposition}\gondolin@owncounter{proposition}%
+    \fi}{}%
+  \@ifundefined{remark}{%
+    \theoremstyle{definition}%
+    \ifgondolin@sharednumbering
+      \newtheorem{remark}[theorem]{Remark}%
+    \else
+      \newtheorem{remark}{Remark}\gondolin@owncounter{remark}%
+    \fi}{}%
+  \theoremstyle{plain}}
+
+%% ---------------------------------------------------------------- code
+%% lstlisting needs \begin{frame}[fragile].
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gondolin-card},
+  keywordstyle=\color{gondolin-accent}\bfseries,
+  commentstyle=\color{gondolin-muted},
+  stringstyle=\color{gondolin-green},
+  numbers=left, numberstyle=\tiny\color{gondolin-muted}, numbersep=8pt,
+  xleftmargin=1.6em, framexleftmargin=1.6em, frame=none,
+  aboveskip=.6em, belowskip=.6em,
+  breaklines=true, breakatwhitespace=true,
+  showstringspaces=false, tabsize=4, columns=fullflexible, keepspaces=true,
+  upquote=true,
+}
+\lst@AddToHook{TextStyle}{\def\lst@basicstyle{\ttfamily}}
+
+%% ---------------------------------------------------------------- bibliography
+%% natbib author-year, small type in two columns. Put it on one frame:
+%%   \begin{frame}{References}
+%%     \bibliographystyle{rivendell}  % or plainnat
+%%     \bibliography{refs}
+%%   \end{frame}
+\ifgondolin@natbib
+  \RequirePackage[authoryear,round]{natbib}
+  \setcitestyle{aysep={},yysep={,}}
+  \renewcommand\bibsection{}
+  \renewcommand\bibfont{\footnotesize\raggedright}
+  \setlength\bibsep{.35em}
+  \setlength\bibhang{1.2em}
+  \let\gondolin@thebib\thebibliography
+  \let\gondolin@endthebib\endthebibliography
+  \renewenvironment{thebibliography}[1]
+    {\begin{multicols}{2}\gondolin@thebib{#1}\interlinepenalty\@M}
+    {\gondolin@endthebib\end{multicols}}
+\fi
+
+%% ---------------------------------------------------------------- notes
+%% Note pages: the frame title and number on top, then the notes in large
+%% type. Show them with \setbeameroption{show notes on second screen=right}
+%% (for pdfpc) or {show only notes} for a printable script.
+\defbeamertemplate*{note page}{Gondolin}{%
+  \vskip.5cm
+  {\usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+   \insertframetitle\hfill\insertframenumber\par}%
+  \vskip.4em{\color{gondolin-inner}\hrule}\vskip.8em
+  {\usebeamerfont{note page}\usebeamercolor[fg]{note page}\insertnote\par}}
+
+\mode<all>
+\endinput
