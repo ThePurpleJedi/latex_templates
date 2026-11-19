@@ -28,7 +28,7 @@
 %%   \titleframe                               dark title slide
 %%   \begin{frame}[standout] ... \end{frame}   dark full-slide statement
 %%   \begin{frame}[bg=photo.jpg] ...           image filling the slide
-%%   \appendix                                 starts backup slides: a divider,
+%%   \appendix                                 starts Addendum: a divider,
 %%                                             and they don't count in "n / N"
 %%   \imagetext[opts]{image}{text}            text left, image right; opts:
 %%                                             left, width=.45, height=.75,
@@ -220,7 +220,7 @@
 
 %% ---------------------------------------------------------------- outer: footline
 %% "n / N", where N counts only the main talk (read from the .aux file, so
-%% it is right from the second run). Backup slides show "Backup k".
+%% it is right from the second run). Addendum show "Backup k".
 \providecommand\gondolin@maintotal{\inserttotalframenumber}
 \def\gondolin@mainlast{0}
 \defbeamertemplate*{footline}{Gondolin}{%
@@ -367,14 +367,14 @@
     \fi
   \fi}
 
-%% ---------------------------------------------------------------- backup slides
+%% ---------------------------------------------------------------- Addendum
 %% \appendix: record the main-talk total in the .aux, switch the footline to
 %% "Backup k" and show a divider.
 \apptocmd\appendix{%
   \global\gondolin@backuptrue
   \xdef\gondolin@mainlast{\the\c@framenumber}%
   \immediate\write\@auxout{\gdef\string\gondolin@maintotal{\the\c@framenumber}}%
-  \gondolin@divider{Appendix}{Backup slides}}{}{}
+  \gondolin@divider{Appendix}{Addendum}}{}{}
 
 %% ---------------------------------------------------------------- image + text
 %% \imagetext[options]{image file}{text}: two columns inside a frame, text on
