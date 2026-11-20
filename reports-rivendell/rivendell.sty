@@ -4,7 +4,7 @@
 %% AASTeX v7 "default" style (as used by ApJ/AJ/PASP): wide single-column
 %% text block, centred small-caps author block, centred upper-case section
 %% heads, italic subsection heads, "ABSTRACT" block with keywords, author-year
-%% citations, two-column REFERENCES list and lettered appendices.
+%% citations, single-column references list and lettered appendices.
 %%
 %% Usage:
 %%   \documentclass[10pt,a4paper]{article}
@@ -72,6 +72,10 @@
 \RequirePackage{xcolor}
 \RequirePackage{array}
 \RequirePackage{booktabs}
+\RequirePackage{float}
+\RequirePackage{adjustbox}
+% Floats stay inside the section that refers to them.
+\RequirePackage[section]{placeins}
 \RequirePackage[normalem]{ulem}
 \RequirePackage{multicol}
 \RequirePackage{fancyhdr}
@@ -86,7 +90,7 @@
 %% no paragraph skip, page numbers in the header.
 \RequirePackage{geometry}
 \geometry{
-  textwidth=7.1in,
+  textwidth=6.3in,
   textheight=23cm,
   hcentering,
   top=2.2cm,
@@ -94,9 +98,12 @@
   headsep=0.3in,
   footskip=0.4in,
 }
-\linespread{1.04}           % 10pt on 12.5pt, as in AASTeX
-\setlength\parindent{0.125in}
-\setlength\parskip{0pt}
+\linespread{1.08}
+\setlength\parindent{0pt}
+\setlength\parskip{0.4em plus 0.15em}
+\setlength\textfloatsep{1.6em plus 0.4em minus 0.4em}
+\setlength\floatsep{1.4em plus 0.4em minus 0.3em}
+\setlength\intextsep{1.4em plus 0.4em minus 0.3em}
 \tolerance=600
 \emergencystretch=1em
 
@@ -203,17 +210,17 @@
 %% "1. INTRODUCTION" centred caps; "1.1. Italic" centred; smaller below that.
 \setcounter{secnumdepth}{3}
 \titleformat{\section}
-  {\normalfont\normalsize\filcenter}{\thesection.}{.5em}{\MakeUppercase}
+  {\normalfont\normalsize\filcenter}{\thesection.}{.6em}{\MakeUppercase}
 \titleformat{\subsection}
-  {\normalfont\normalsize\itshape\filcenter}{\thesubsection.}{.5em}{}
+  {\normalfont\normalsize\itshape\filcenter}{\thesubsection.}{.6em}{}
 \titleformat{\subsubsection}
-  {\normalfont\small\itshape\filcenter}{\thesubsubsection.}{.5em}{}
+  {\normalfont\small\itshape\filcenter}{\thesubsubsection.}{.6em}{}
 \titleformat{\paragraph}[runin]
   {\normalfont\small\itshape}{}{0pt}{}[ ---]
-\titlespacing*{\section}      {0pt}{2.2ex plus .6ex minus .2ex}{1.1ex plus .2ex}
-\titlespacing*{\subsection}   {0pt}{1.8ex plus .5ex minus .2ex}{.9ex plus .2ex}
-\titlespacing*{\subsubsection}{0pt}{1.5ex plus .5ex minus .2ex}{.7ex plus .2ex}
-\titlespacing*{\paragraph}    {\parindent}{1ex plus .5ex minus .2ex}{.5em}
+\titlespacing*{\section}      {0pt}{3.2ex plus .8ex minus .3ex}{1.4ex plus .2ex}
+\titlespacing*{\subsection}   {0pt}{2.6ex plus .6ex minus .3ex}{1.1ex plus .2ex}
+\titlespacing*{\subsubsection}{0pt}{2.2ex plus .5ex minus .2ex}{.9ex plus .2ex}
+\titlespacing*{\paragraph}    {\parindent}{.6em plus .2em}{.5em}
 
 \newenvironment{acknowledgments}
   {\section*{Acknowledgments}\setlength\parindent{0pt}}
@@ -303,10 +310,9 @@
   \let\rivendell@endthebib\endthebibliography
   \renewenvironment{thebibliography}[1]
     {\section*{\refname}%
-     \begin{multicols}{2}%
      \let\bibsection\relax
      \rivendell@thebib{#1}}
-    {\rivendell@endthebib\end{multicols}}
+    {\rivendell@endthebib}
 \fi
 
 %% ---------------------------------------------------------------- hyperref
